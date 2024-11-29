@@ -69,4 +69,4 @@ print(Gigantix.getLongNotation(result)) -- Output: "10000"
 
 --- 
 
-For issues, feature requests, or contributions, feel free to [open an issue on GitHub](https://github.com/DavldMA/Gigantix/issues).  
+For issues, feature requests, contributions or just recomendations, feel free to [open an issue on GitHub](https://github.com/DavldMA/Gigantix/issues).  
