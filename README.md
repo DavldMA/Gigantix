@@ -1,4 +1,4 @@
-### Gigantix - Roblox Big Numbers Module  
+# Gigantix - Roblox Big Numbers Module  
 
 **Gigantix** is a powerful Roblox Lua module designed to handle extremely large numbers seamlessly. Whether you're dealing with trillions, quadrillions, or beyond, Gigantix provides tools to convert, format, add, and subtract massive numbers with precision.
 
@@ -69,4 +69,4 @@ print(Gigantix.getLongNotation(result)) -- Output: "10000"
 
 --- 
 
-For issues, feature requests, or contributions, feel free to [open an issue on GitHub]([https://github.com/your-repo-link](https://github.com/DavldMA/Gigantix)).  
+For issues, feature requests, or contributions, feel free to [open an issue on GitHub]([https://github.com/DavldMA/Gigantix/issues]).  
