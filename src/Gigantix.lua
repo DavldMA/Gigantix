@@ -1,8 +1,8 @@
 local Gigantix = {}
 
-
+-- Notation table for suffixes used in short notation
 local NOTATION = {
-	'', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc', 
+	'', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc',
 	'UD', 'DD', 'TD', 'QaD', 'QiD', 'SxD', 'SpD', 'OcD', 'NnD', 'Vi',
 	'UVg', 'DVg', 'TVg', 'QaVg', 'QiVg', 'SxVg', 'SpVg', 'OcVg', 'NoVg', 'Tg',
 	'Qag', 'Qig', 'Sxg', 'Spg', 'Ocg', 'Nog', 'Ce',
@@ -10,175 +10,169 @@ local NOTATION = {
 	'GP'
 }
 
+-- Lookup table for suffix multipliers
+local suffixLookup = {}
+for i = 1, #NOTATION do
+	local v = NOTATION[i]
+	suffixLookup[v:lower()] = (i - 1) * 3
+end
 
---[[<strong>Convert notation like "15K" to "15000"</strong><br>
-    <em>Example:</em><br>
-    <code>local result = Gigantix.convertNotationToNumber("15K")</code><br>
-    <code>print(result) -- Output: "15000"</code>]]
+
+-- Caching global functions for performance optimization
+local math_floor = math.floor
+local string_rep = string.rep
+local string_format = string.format
+local table_concat = table.concat
+local table_create = table.create
+
+-- Precompute power values to avoid repeated calculations
+local powerCache = {}
+for i = 1, #NOTATION do
+	powerCache[i] = 10 ^ (i * 3)
+end
+
+--[[ 
+    Convert notation like "15K" to "15000"
+    Example:
+    local result = Gigantix.convertNotationToNumber("15K")
+    print(result) -- Output: "15000"
+]]
 function Gigantix.convertNotationToNumber(notation: string): string
 	-- Remove commas or periods used as thousand separators
 	notation = notation:gsub("[,.]", "")
 
-	local number = tonumber(notation:match("[%d%.]+"))  -- Match digits and decimal points
-	local suffix = notation:match("%a+")  -- Match suffix if present
-	local multiplier = 1
+	-- Extract numeric and suffix parts
+	local number = notation:match("[%d%.]+")
+	local suffix = notation:match("%a+")
 
 	if suffix then
-		suffix = suffix:lower()  -- Convert suffix to lowercase
-		for i, v in ipairs(NOTATION) do
-			if v:lower() == suffix then  -- Compare in lowercase
-				multiplier = 10 ^ ((i - 1) * 3)
-				break
-			end
+		suffix = suffix:lower()
+		local zerosCount = suffixLookup[suffix]
+		if zerosCount then
+			number = number .. string_rep("0", zerosCount)
 		end
 	end
 
-	return tostring(number * multiplier)
+	return number
 end
 
+--[[ 
+    Convert a string number to an array of numbers
+    Example:
+    local total = Gigantix.convertStringToArrayNumber("15000")
+    print(total) -- Output: {15, 0, 0}
+]]
+function Gigantix.convertStringToArrayNumber(num: string): {number}
+	local len = #num
+	local blocksCount = math.ceil(len / 3)
+	local arr = table_create(blocksCount)
+	local index = 1
 
---[[<strong>Convert a string number to an array of numbers</strong><br>
-    <em>Example:</em><br>
-    <code>local total = Gigantix.convertStringToArrayNumber("15000")</code><br>
-    <code>print(total) -- Output: {15, 0, 0}</code>]]
-function Gigantix.convertStringToArrayNumber(num: string): {string}
-	local arr = {}
-
-	while num ~= "" do
-		if #num < 3 then
-			table.insert(arr, tonumber(num))
-			num = ""
-			break
-		end
-
-		table.insert(arr, tonumber(num:sub(-3)))
-		num = num:sub(1, -4)
+	for i = len, 1, -3 do
+		local start = math.max(1, i - 2)
+		arr[index] = tonumber(num:sub(start, i))
+		index = index + 1
 	end
+
 	return arr
 end
 
-
---[[<strong>Get short notation for the total number</strong><br>
-    <em>Example:</em><br>
-    <code>local total = Gigantix.convertStringToArrayNumber("15000")</code><br>
-    <code>local result = Gigantix.getShortNotation(total)</code><br>
-    <code>print(result) -- Output: "15K"</code>]]
-function Gigantix.getShortNotation(total: {string}, ignoreDigits: number?): string
+--[[ 
+    Get short notation for a large number
+    Example:
+    local total = Gigantix.convertStringToArrayNumber("15000")
+    local result = Gigantix.getShortNotation(total)
+    print(result) -- Output: "15K"
+]]
+function Gigantix.getShortNotation(total: {number}): string
 	local numString = Gigantix.getLongNotation(total)
-	local num = tonumber(numString)
-	local ignoreDigits = ignoreDigits or 0
-	local suffixIndex = math.floor((#numString - 1 - ignoreDigits) / 3) + 1
-	if suffixIndex <= 0 then
+	local num = tonumber(numString) or 0
+	local suffixIndex = math_floor((#numString - 1) / 3) + 1
+
+	if suffixIndex <= 0 or suffixIndex > #NOTATION then
 		return numString
 	end
 
-	local shortNum = num / (10 ^ ((suffixIndex - 1) * 3))
-	local shortNumString = string.format("%.10f", shortNum)  -- Ensure enough precision
-	local integerPart, decimalPart = shortNumString:match("(%d+)%.(%d)")
-	if decimalPart == "0" then
-		return integerPart .. NOTATION[suffixIndex]
+	local divisor = powerCache[suffixIndex - 1] or 1
+	local shortNum = num / divisor
+	local rounded = math_floor(shortNum * 10 + 0.5) / 10
+	local integerPart = math_floor(rounded)
+	local fraction = rounded - integerPart
+
+	if fraction == 0 then
+		return tostring(integerPart) .. NOTATION[suffixIndex]
 	else
-		return integerPart .. "." .. decimalPart .. NOTATION[suffixIndex]
+		local firstDecimal = math_floor(fraction * 10)
+		return tostring(integerPart) .. "." .. tostring(firstDecimal) .. NOTATION[suffixIndex]
 	end
-
 end
 
+--[[ 
+    Get long notation for a large number
+    Example:
+    local total = Gigantix.convertStringToArrayNumber("15000")
+    local result = Gigantix.getLongNotation(total)
+    print(result) -- Output: "15000"
+]]
+function Gigantix.getLongNotation(total: {number}): string
+	local n = #total
+	local parts = table_create(n)
 
-
---[[<strong>Get long notation for the total number</strong><br>
-    <em>Example:</em><br>
-    <code>local total = Gigantix.convertStringToArrayNumber("15000")</code><br>
-    <code>local result = Gigantix.getLongNotation(total)</code><br>
-    <code>print(result) -- Output: "15000"</code>]]
-function Gigantix.getLongNotation(total: {string}): string
-	local temp = {table.unpack(total)}
-	local numString = ""
-
-	while #temp > 0 do
-		local num = table.remove(temp)
-		numString = numString .. string.format("%03d", num)
+	for i = 1, n do
+		local block = total[n - i + 1]
+		parts[i] = (i == 1) and tostring(block) or string_format("%03d", block)
 	end
 
-	for i = 1, #numString do
-		if numString:sub(i, i) ~= "0" then
-			numString = numString:sub(i)
-			break
-		end
-	end
-
-	return numString
+	return table_concat(parts)
 end
 
-
---[[<strong>Add two large numbers represented as arrays</strong><br>
-    <em>Example:</em><br>
-    <code>local total = Gigantix.convertStringToArrayNumber("15000")</code><br>
-    <code>local num = Gigantix.convertStringToArrayNumber("5000")</code><br>
-    <code>local resultCalc = Gigantix.addLargeNumbers(total, num)</code><br>
-    <code>local result = Gigantix.getLongNotation(resultCalc)</code><br>
-    <code>print(result) -- Output: "20000"</code>]]
-function Gigantix.addLargeNumbers(total: {string}, num: {string}): {string}
-	local result = {}
+--[[ 
+    Add two large numbers represented as arrays
+    Example:
+    local total = Gigantix.convertStringToArrayNumber("15000")
+    local num = Gigantix.convertStringToArrayNumber("5000")
+    local resultCalc = Gigantix.addLargeNumbers(total, num)
+    local result = Gigantix.getLongNotation(resultCalc)
+    print(result) -- Output: "20000"
+]]
+function Gigantix.addLargeNumbers(total: {number}, num: {number}): {number}
+	local maxLength = math.max(#total, #num)
+	local result = table_create(maxLength + 1)
 	local carry = 0
 
-	local totalCopy = {table.unpack(total)}
-	local numCopy = {table.unpack(num)}
-
-	while #numCopy > 0 or #totalCopy > 0 do
-		local sum = 0
-
-		if #numCopy > 0 then
-			sum = sum + table.remove(numCopy, 1)
-		end
-
-		if #totalCopy > 0 then
-			sum = sum + table.remove(totalCopy, 1)
-		end
-
-		sum = sum + carry
-		carry = 0
-
-		table.insert(result, Gigantix.convertStringToArrayNumber(tostring(sum))[1])
-
-		if #Gigantix.convertStringToArrayNumber(tostring(sum)) > 1 then
-			carry = Gigantix.convertStringToArrayNumber(tostring(sum))[2]
-		end
+	for i = 1, maxLength do
+		local a = total[i] or 0
+		local b = num[i] or 0
+		local sum = a + b + carry
+		result[i] = sum % 1000
+		carry = math_floor(sum / 1000)
 	end
 
-	if carry ~= 0 then
-		table.insert(result, carry)
+	if carry > 0 then
+		result[maxLength + 1] = carry
 	end
 
 	return result
 end
 
-
---[[<strong>Subtract one large number from another represented as arrays</strong><br>
-    <em>Example:</em><br>
-    <code>local total = Gigantix.convertStringToArrayNumber("15000")</code><br>
-    <code>local num = Gigantix.convertStringToArrayNumber("5000")</code><br>
-    <code>local resultCalc = Gigantix.subtractLargeNumbers(total, num)</code><br>
-    <code>local result = Gigantix.getLongNotation(resultCalc)</code><br>
-    <code>print(result) -- Output: "10000"</code>]]
-function Gigantix.subtractLargeNumbers(total: {string}, num: {string}): {string}
-	local result = {}
+--[[ 
+    Subtract one large number from another represented as arrays
+    Example:
+    local total = Gigantix.convertStringToArrayNumber("15000")
+    local num = Gigantix.convertStringToArrayNumber("5000")
+    local resultCalc = Gigantix.subtractLargeNumbers(total, num)
+    local result = Gigantix.getLongNotation(resultCalc)
+    print(result) -- Output: "10000"
+]]
+function Gigantix.subtractLargeNumbers(total: {number}, num: {number}): {number}
+	local maxLength = math.max(#total, #num)
+	local result = table_create(maxLength)
 	local borrow = 0
 
-	local totalCopy = {table.unpack(total)}
-	local numCopy = {table.unpack(num)}
-
-	while #numCopy > 0 or #totalCopy > 0 do
-		local diff = 0
-
-		if #totalCopy > 0 then
-			diff = diff + table.remove(totalCopy, 1)
-		end
-
-		if #numCopy > 0 then
-			diff = diff - table.remove(numCopy, 1)
-		end
-
-		diff = diff - borrow
+	for i = 1, maxLength do
+		local a = total[i] or 0
+		local b = num[i] or 0
+		local diff = a - b - borrow
 
 		if diff < 0 then
 			diff = diff + 1000
@@ -187,15 +181,14 @@ function Gigantix.subtractLargeNumbers(total: {string}, num: {string}): {string}
 			borrow = 0
 		end
 
-		table.insert(result, Gigantix.convertStringToArrayNumber(tostring(diff))[1])
+		result[i] = diff
 	end
 
 	while #result > 1 and result[#result] == 0 do
-		table.remove(result)
+		result[#result] = nil
 	end
 
 	return result
 end
-
 
 return Gigantix
