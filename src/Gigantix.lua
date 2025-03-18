@@ -1,18 +1,74 @@
 -- Made by Im_Panik and Contributors - https://github.com/DavldMA/Gigantix
 -- Show me your games here - https://devforum.roblox.com/t/gigantix-%E2%80%94-infinite-size-numbers-module/3307153/1
-
+-- Some of the code was inspired or even merged from the fork - https://github.com/Artheriax/Gigantix-Plus
+-- (if u are the original author and don't want for your code to be used, please contact me)
 local Gigantix = {}
 
 -- Notation table for suffixes used in short notation
 -- You can add more notation to make the numbers go higher
 local NOTATION = {
-	'', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc',
-	'UD', 'DD', 'TD', 'QaD', 'QiD', 'SxD', 'SpD', 'OcD', 'NnD', 'Vi',
-	'UVg', 'DVg', 'TVg', 'QaVg', 'QiVg', 'SxVg', 'SpVg', 'OcVg', 'NoVg', 'Tg',
-	'Qag', 'Qig', 'Sxg', 'Spg', 'Ocg', 'Nog', 'Ce',
-	'UCe', 'DCe', 'TCe', 'QaCe', 'QiCe', 'SxCe', 'SpCe', 'OtCe', 'NvCe', 'DcCe', 'UDcCe',
-	'GP'
+	'',    -- 10^0 (1)
+	'K',   -- 10^3 (Thousand)
+	'M',   -- 10^6 (Million)
+	'B',   -- 10^9 (Billion)
+	'T',   -- 10^12 (Trillion)
+	'Qa',  -- 10^15 (Quadrillion)
+	'Qi',  -- 10^18 (Quintillion)
+	'Sx',  -- 10^21 (Sextillion)
+	'Sp',  -- 10^24 (Septillion)
+	'Oc',  -- 10^27 (Octillion)
+	'No',  -- 10^30 (Nonillion)
+	'Dc',  -- 10^33 (Decillion)
+	'UD',  -- 10^36 (Undecillion)
+	'DD',  -- 10^39 (Duodecillion)
+	'TD',  -- 10^42 (Tredecillion)
+	'QaD', -- 10^45 (Quattuordecillion)
+	'QiD', -- 10^48 (Quindecillion)
+	'SxD', -- 10^51 (Sedecillion)
+	'SpD', -- 10^54 (Septendecillion)
+	'OcD', -- 10^57 (Octodecillion)
+	'NnD', -- 10^60 (Novendecillion)
+	'Vi',  -- 10^63 (Vigintillion)
+	'UVg', -- 10^66 (Unvigintillion)
+	'DVg', -- 10^69 (Duovigintillion)
+	'TVg', -- 10^72 (Tresvigintillion)
+	'QaVg',-- 10^75 (Quattuorvigintillion)
+	'QiVg',-- 10^78 (Quinvigintillion)
+	'SxVg',-- 10^81 (Sesvigintillion)
+	'SpVg',-- 10^84 (Septemvigintillion)
+	'OcVg',-- 10^87 (Octovigintillion)
+	'NoVg',-- 10^90 (Novemvigintillion)
+	'Tg',  -- 10^93 (Trigintillion)
+	'Qag', -- 10^123 (Quadragintillion)
+	'Qig', -- 10^153 (Quinquagintillion)
+	'Sxg', -- 10^183 (Sexagintillion)
+	'Spg', -- 10^213 (Septuagintillion)
+	'Ocg', -- 10^243 (Octogintillion)
+	'Nog', -- 10^273 (Nonagintillion)
+	'Ce',  -- 10^303 (Centillion)
+	'UCe', -- 10^306 (Uncentillion)
+	'DCe', -- 10^309 (Duocentillion)
+	'TCe', -- 10^312 (Trecentillion)
+	'QaCe',-- 10^315 (Quattuorcentillion)
+	'QiCe',-- 10^318 (Quincentillion)
+	'SxCe',-- 10^321 (Sexcentillion)
+	'SpCe',-- 10^324 (Septencentillion)
+	'OtCe',-- 10^327 (Octocentillion)
+	'NvCe',-- 10^330 (Novemcentillion)
+	'DcCe',-- 10^333 (Decicentillion)
+	'UDcCe',-- 10^336 (Undecicentillion)
+	'TDcCe',-- 10^339 (Tredecicentillion)
+	'QaDcCe',-- 10^342 (Quattuordecicentillion)
+	'QiDcCe',-- 10^345 (Quindecicentillion)
+	'SxDcCe',-- 10^348 (Sedecicentillion)
+	'SpDcCe',-- 10^351 (Septendecicentillion)
+	'OtDcCe',-- 10^354 (Octodecicentillion)
+	'NvDcCe',-- 10^357 (Novemdecicentillion)
+	'ViCe',-- 10^360 (Viginticentillion)
 }
+
+-- Possible feature
+-- 	'8'    -- Infinity (for numbers beyond 10^360)
 
 local CHARACTERS = {
 	"0","1","2","3","4","5","6","7","8","9",
@@ -52,10 +108,12 @@ for i = 1, #NOTATION do
 end
 
 -- Helper functions
+-- Gets the sign of a block
 local function getSign(blocks)
 	return (blocks[#blocks] < 0) and -1 or 1
 end
 
+-- This is useful when you want to compare the magnitude of numbers without considering their sign
 local function absBlocks(blocks)
 	local absArr = {}
 	for i, v in ipairs(blocks) do
@@ -64,24 +122,49 @@ local function absBlocks(blocks)
 	return absArr
 end
 
+-- This function helps determine which of two large numbers 
+-- (ignoring their sign) is larger, or if they are equal
 function compareAbsolute(arr1, arr2)
-	local n = math.max(#arr1, #arr2)
-	for i = n, 1, -1 do
+	local maxLength = math.max(#arr1, #arr2)
+	for i = maxLength, 1, -1 do
 		local a = arr1[i] or 0
 		local b = arr2[i] or 0
 		if a > b then return 1 end
-		if a < b then return -1 end
+		if a < b then return -1 end	
 	end
 	return 0
 end
 
-function addNumbers(total, num)
-	local maxLength = math.max(#total, #num)
+-- Compares two numbers and returns 1 if the first number is greater
+-- 0 if they are equal, and -1 if the second number is greater
+function compareNumbers(num1, num2)
+	local sign1 = getSign(num1)
+	local sign2 = getSign(num2)
+	-- If the signs differ, the negative number is smaller
+	if sign1 > sign2 then 
+		return 1 
+	elseif sign1 < sign2 then 
+		return -1 
+	end
+
+	-- Both numbers have the same sign; compare their absolute values.
+	local cmp = compareAbsolute(absBlocks(num1), absBlocks(num2))
+	
+	-- For negative numbers, reverse the comparison.
+	if sign1 < 0 then 
+		cmp = -cmp 
+	end
+	return cmp
+end
+
+-- It just adds two numbers together
+function addNumbers(num1, num2)
+	local maxLength = math.max(#num1, #num2)
 	local result = table_create(maxLength + 1)
 	local carry = 0
 	for i = 1, maxLength do
-		local a = total[i] or 0
-		local b = num[i] or 0
+		local a = num1[i] or 0
+		local b = num2[i] or 0
 		local sum = a + b + carry
 		result[i] = sum % 1000
 		carry = math_floor(sum / 1000)
@@ -92,13 +175,14 @@ function addNumbers(total, num)
 	return result
 end
 
-function subtractNumbers(total, num)
-	local maxLength = math.max(#total, #num)
+-- It just subtracts two numbers
+function subtractNumbers(num1, num2)
+	local maxLength = math.max(#num1, #num2)
 	local result = table_create(maxLength)
 	local borrow = 0
 	for i = 1, maxLength do
-		local a = total[i] or 0
-		local b = num[i] or 0
+		local a = num1[i] or 0
+		local b = num2[i] or 0
 		local diff = a - b - borrow
 		if diff < 0 then
 			diff = diff + 1000
@@ -115,11 +199,14 @@ function subtractNumbers(total, num)
 end
 
 -- Main Functions
---[[<strong>Convert notation like "15K" to "15000"</strong><br>
+--[[<strong>Convert notation to String</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local result = Gigantix.notationToString("15K")
+    <code>local result = Gigantix.notationToString("15K", true)
     print(result) -- Output: "15000"</code>]]
-function Gigantix.notationToString(notation)
+function Gigantix.notationToString(notation, isEncoded)
+	if isEncoded then
+		notation = Gigantix.decodeNumber(notation)
+	end
 	notation = notation:gsub("[,.]", "")
 	local number = notation:match("[%d%.]+")
 	local suffix = notation:match("%a+")
@@ -135,9 +222,12 @@ end
 
 --[[<strong>Convert a string number to an array of numbers</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local total = Gigantix.stringToNumber("15000")
-    print(total) -- Output: {0, 15}</code>]]
-function Gigantix.stringToNumber(str)
+    <code>local num = Gigantix.stringToNumber("15000", true)
+    print(num) -- Output: {0, 15}</code>]]
+function Gigantix.stringToNumber(str, isEncoded)
+	if isEncoded then
+		str = Gigantix.decodeNumber(str)
+	end
 	local len = #str
 	local blocksCount = math.ceil(len / 3)
 	local arr = table_create(blocksCount)
@@ -150,35 +240,46 @@ function Gigantix.stringToNumber(str)
 	return arr
 end
 
---[[<strong>Get long notation for the total number</strong><br>
+--[[<strong>Get long notation for the number</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local total = Gigantix.stringToNumber("15000")
-    local result = Gigantix.getLong(total)
+    <code>local num = Gigantix.stringToNumber("15000")
+    local result = Gigantix.getLong(num, true)
     print(result) -- Output: "15000"</code>]]
-function Gigantix.getLong(total)
-	local n = #total
+function Gigantix.getLong(num, isEncoded)
+	if isEncoded then
+		-- Assume num is an encoded string that must be decoded and converted to an array
+		num = Gigantix.stringToNumber(Gigantix.decodeNumber(num))
+	end
+	local n = #num
 	local parts = table_create(n)
 	for i = 1, n do
-		local block = total[n - i + 1]
+		local block = num[n - i + 1]
 		parts[i] = (i == 1) and tostring(block) or string_format("%03d", block)
 	end
 	return table_concat(parts)
 end
 
---[[<strong>Get short notation for the total number</strong><br>
+--[[<strong>Get short notation for the number</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local total = Gigantix.stringToNumber("15000")
-    local result = Gigantix.getShort(total)
+    <code>local num = Gigantix.stringToNumber("15000")
+    local result = Gigantix.getShort(num, true)
     print(result) -- Output: "15K"</code>]]
-function Gigantix.getShort(total)
-	local numString = Gigantix.getLong(total)
-	local num = tonumber(numString) or 0
+function Gigantix.getShort(num, isEncoded)
+	if isEncoded then
+		num = Gigantix.stringToNumber(Gigantix.decodeNumber(num))
+	end
+	local numString = Gigantix.getLong(num)
+	local numVal = tonumber(numString) or 0
 	local suffixIndex = math_floor((#numString - 1) / 3) + 1
 	if suffixIndex <= 0 or suffixIndex > #NOTATION then
 		return numString
 	end
+	--[[ possible feature
+	if suffixIndex > #NOTATION then
+		return "8"
+	end]]
 	local divisor = powerCache[suffixIndex - 1] or 1
-	local shortNum = num / divisor
+	local shortNum = numVal / divisor
 	local rounded = math_floor(shortNum * 10 + 0.5) / 10
 	local integerPart = math_floor(rounded)
 	local fraction = rounded - integerPart
@@ -192,12 +293,16 @@ end
 
 --[[<strong>Add two large numbers represented as arrays</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local total = Gigantix.stringToNumber("15000")
-    local num = Gigantix.stringToNumber("5000")
-    local resultCalc = Gigantix.add(total, num)
+    <code>local num1 = Gigantix.stringToNumber("15000", true)
+    local num2 = Gigantix.stringToNumber("5000", true)
+    local resultCalc = Gigantix.add(num1, num2, true)
     local result = Gigantix.getLong(resultCalc)
     print(result) -- Output: "20000"</code>]]
-function Gigantix.add(num1, num2)
+function Gigantix.add(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
 	local sign1 = getSign(num1)
 	local sign2 = getSign(num2)
 	local abs1 = absBlocks(num1)
@@ -215,46 +320,155 @@ function Gigantix.add(num1, num2)
 			resultAbs[#resultAbs] = resultAbs[#resultAbs] * sign2
 		end
 	end
-
 	if resultAbs[#resultAbs] == -0 then
 		resultAbs[#resultAbs] = 0
 	end
-
 	return resultAbs
 end
 
 --[[<strong>Subtract one large number from another represented as arrays</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local total = Gigantix.stringToNumber("15000")
-    local num = Gigantix.stringToNumber("5000")
-    local resultCalc = Gigantix.subtract(total, num)
+    <code>local num1 = Gigantix.stringToNumber("15000", true)
+    local num2 = Gigantix.stringToNumber("5000", true)
+    local resultCalc = Gigantix.subtract(num1, num2, true)
     local result = Gigantix.getLong(resultCalc)
     print(result) -- Output: "10000"</code>]]
-function Gigantix.subtract(num1, num2)
+function Gigantix.subtract(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
 	local negated = {}
 	table_move(num2, 1, #num2, 1, negated)
 	negated[#negated] = -negated[#negated]
 	return Gigantix.add(num1, negated)
 end
 
-
---[[<strong>Compare one long number with another</strong><br>
+--[[<strong>Multiplies two large numbers represented as arrays</strong><br>
     <strong><em>Example:</em></strong>
-    <code>local num1 = Gigantix.stringToNumber("15000") 
-	local isEquals = Gigantix.compareLongNumbers(num1, {0, 15})
-    print(isEquals) -- Output: true</code>]]
-function Gigantix.compare(num1, num2)
-	if #num1 ~= #num2 then
-		return false
+    <code>local num1 = Gigantix.stringToNumber("5000", true)
+    local num2 = Gigantix.stringToNumber("2", true)
+    local resultCalc = Gigantix.multiply(num1, num2, true)
+    local result = Gigantix.getLong(resultCalc)
+    print(result) -- Output: "10000"</code>]]
+function Gigantix.multiply(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
+	local sign1 = getSign(num1)
+	local sign2 = getSign(num2)
+	local resultSign = sign1 * sign2
+
+	local abs1 = absBlocks(num1)
+	local abs2 = absBlocks(num2)
+	local resultLength = #abs1 + #abs2
+	local result = table_create(resultLength)
+	for i = 1, resultLength do
+		result[i] = 0
 	end
 
-	for i = 1, #num1 do
-		if num1[i] ~= num2[i] then
-			return false
+	for i = 1, #abs1 do
+		for j = 1, #abs2 do
+			result[i+j-1] = result[i+j-1] + abs1[i] * abs2[j]
 		end
 	end
 
-	return true
+	for i = 1, #result do
+		local carry = math_floor(result[i] / 1000)
+		result[i] = result[i] % 1000
+		if carry > 0 then
+			if i+1 <= #result then
+				result[i+1] = result[i+1] + carry
+			else
+				table_insert(result, carry)
+			end
+		end
+	end
+
+	while #result > 1 and result[#result] == 0 do
+		table_remove(result)
+	end
+
+	result[#result] = result[#result] * resultSign
+	return result
+end
+
+--[[<strong>Compare one long number with another returns true if equal</strong><br>
+    <strong><em>Example:</em></strong>
+    <code>local num1 = Gigantix.stringToNumber("15000", true)
+    local isEquals = Gigantix.isEquals(num1, {0, 15}, true)
+    print(isEquals) -- Output: true</code>]]
+function Gigantix.isEquals(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
+	return compareNumbers(num1, num2) == 0
+end
+
+--[[<strong>Compare one long number with another returns true if lesser</strong><br>
+    <strong><em>Example:</em></strong>
+    <code>local num1 = Gigantix.stringToNumber("5000", true)
+    local isLesser = Gigantix.isLesser(num1, {0, 15}, true)
+    print(isLesser) -- Output: true</code>]]
+function Gigantix.isLesser(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
+	return compareNumbers(num1, num2) == -1
+end
+
+--[[<strong>Compare one long number with another returns true if greater</strong><br>
+    <strong><em>Example:</em></strong>
+    <code>local num1 = Gigantix.stringToNumber("150000", true)
+    local isGreater = Gigantix.isGreater(num1, {0, 15}, true)
+    print(isGreater) -- Output: true</code>]]
+function Gigantix.isGreater(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
+	return compareNumbers(num1, num2) == 1
+end
+
+--[[<strong>Compare one long number with another returns true if is greater or equals</strong><br>
+    <strong><em>Example:</em></strong>
+    <code>local num1 = Gigantix.stringToNumber("150000", true)
+    local isGreaterOrEquals = Gigantix.isGreaterOrEquals(num1, {0, 15}, true)
+    print(isGreaterOrEquals) -- Output: true</code>]]
+function Gigantix.isGreaterOrEquals(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
+	return (Gigantix.isGreater(num1, num2) or Gigantix.isEquals(num1, num2))
+end
+
+--[[<strong>Compare one long number with another returns true if is lesser or equals</strong><br>
+    <strong><em>Example:</em></strong>
+    <code>local num1 = Gigantix.stringToNumber("15000", true)
+    local isLesserOrEquals = Gigantix.isLesserOrEquals(num1, {0, 15}, true)
+    print(isLesserOrEquals) -- Output: true</code>]]
+function Gigantix.isLesserOrEquals(num1, num2, isEncoded)
+	if isEncoded then
+		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
+		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
+	end
+	return (Gigantix.isLesser(num1, num2) or Gigantix.isEquals(num1, num2))
+end
+
+--[[<strong>Returns true if the number is negative</strong><br>
+    <strong><em>Example:</em></strong>
+    <code>local num = Gigantix.stringToNumber("-15000", true)
+    local isNegative = Gigantix.isNegative(num, true)
+    print(isNegative) -- Output: true</code>]]
+function Gigantix.isNegative(num, isEncoded)
+	if isEncoded then
+		num = Gigantix.stringToNumber(Gigantix.decodeNumber(num))
+	end
+	return num[#num] < 0
 end
 
 
