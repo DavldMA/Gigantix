@@ -1,5 +1,5 @@
 -- Made by Im_Panik and Contributors - https://github.com/DavldMA/Gigantix
--- Show me your games here - https://devforum.roblox.com/t/gigantix-%E2%80%94-infinite-size-numbers-module/3307153/1
+-- Show me your games here - devforum.roblox.com/t/gigantix-—-infinite-size-numbers-module/3307153/27
 -- Some of the code was inspired or even merged from the fork - https://github.com/Artheriax/Gigantix-Plus
 -- (if u are the original author and don't want for your code to be used, please contact me)
 local Gigantix = {}
