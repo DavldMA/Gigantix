@@ -1,5 +1,5 @@
 -- Made by Im_Panik and Contributors - https://github.com/DavldMA/Gigantix
--- Show me your games here - devforum.roblox.com/t/gigantix-—-infinite-size-numbers-module/3307153/27
+-- Show me your games here - https://devforum.roblox.com/t/gigantix-%E2%80%94-infinite-size-numbers-module/3307153/1
 -- Some of the code was inspired or even merged from the fork - https://github.com/Artheriax/Gigantix-Plus
 -- (if u are the original author and don't want for your code to be used, please contact me)
 local Gigantix = {}
@@ -68,7 +68,7 @@ local NOTATION = {
 }
 
 -- Possible feature
--- 	'8'    -- Infinity (for numbers beyond 10^360)
+-- 	'∞'    -- Infinity (for numbers beyond 10^360)
 
 local CHARACTERS = {
 	"0","1","2","3","4","5","6","7","8","9",
@@ -85,11 +85,12 @@ for i = 1, #NOTATION do
 	suffixLookup[v:lower()] = (i - 1) * 3
 end
 
+local base = #CHARACTERS
 local numbers = {}
 for i, character in ipairs(CHARACTERS) do 
 	numbers[character] = i - 1 
 end
-local base = #CHARACTERS
+
 
 -- Caching global functions for performance optimization
 local math_floor = math.floor
@@ -124,7 +125,7 @@ end
 
 -- This function helps determine which of two large numbers 
 -- (ignoring their sign) is larger, or if they are equal
-function compareAbsolute(arr1, arr2)
+local function compareAbsolute(arr1, arr2)
 	local maxLength = math.max(#arr1, #arr2)
 	for i = maxLength, 1, -1 do
 		local a = arr1[i] or 0
@@ -137,7 +138,7 @@ end
 
 -- Compares two numbers and returns 1 if the first number is greater
 -- 0 if they are equal, and -1 if the second number is greater
-function compareNumbers(num1, num2)
+local function compareNumbers(num1, num2)
 	local sign1 = getSign(num1)
 	local sign2 = getSign(num2)
 	-- If the signs differ, the negative number is smaller
@@ -158,7 +159,7 @@ function compareNumbers(num1, num2)
 end
 
 -- It just adds two numbers together
-function addNumbers(num1, num2)
+local function addNumbers(num1, num2)
 	local maxLength = math.max(#num1, #num2)
 	local result = table_create(maxLength + 1)
 	local carry = 0
@@ -176,7 +177,7 @@ function addNumbers(num1, num2)
 end
 
 -- It just subtracts two numbers
-function subtractNumbers(num1, num2)
+local function subtractNumbers(num1, num2)
 	local maxLength = math.max(#num1, #num2)
 	local result = table_create(maxLength)
 	local borrow = 0
@@ -276,7 +277,7 @@ function Gigantix.getShort(num, isEncoded)
 	end
 	--[[ possible feature
 	if suffixIndex > #NOTATION then
-		return "8"
+		return "∞"
 	end]]
 	local divisor = powerCache[suffixIndex - 1] or 1
 	local shortNum = numVal / divisor
