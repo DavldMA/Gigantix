@@ -120,5 +120,5 @@ print("Is 15000 lesser than -5000?", isLesser)
 
 For issues, feature requests, contributions, or recommendations, feel free to [open an issue on GitHub](https://github.com/DavldMA/Gigantix/issues).
 
-Join the discussion on the [Roblox Developer Forum](devforum.roblox.com/t/gigantix-—-infinite-size-numbers-module/3307153/27) to stay updated and contribute to the community!
+Join the discussion on the [Roblox Developer Forum](https://devforum.roblox.com/t/gigantix-—-infinite-size-numbers-module/3307153/27) to stay updated and contribute to the community!
 
