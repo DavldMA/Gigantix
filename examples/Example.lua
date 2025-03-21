@@ -1,6 +1,5 @@
-local Gigantix = require(script.Parent.Gigantix)
+local Gigantix = require(script.Parent.Modules.Gigantix)	
 
--- Convert number strings into long number representations
 local num1 = Gigantix.stringToNumber("15000")
 local num2 = Gigantix.stringToNumber("-5000")
 local num3 = Gigantix.stringToNumber("15500")
@@ -23,6 +22,18 @@ print("(-5000) - (-5000) =", Gigantix.getLong(subtractToZero))
 
 local multiplicationNegativeNumbers = Gigantix.multiply(num2, num2)
 print("(-5000) * (-5000) =", Gigantix.getLong(multiplicationNegativeNumbers))
+
+local multiplicationResultWithNumber = Gigantix.multiply(num1, 1.5)
+print("15000 * 1.5 (not a table) =", Gigantix.getLong(multiplicationResultWithNumber))
+
+local multiplicationResultWithNumberlower = Gigantix.multiply(Gigantix.stringToNumber("1"), 1.5)
+print("1 * 1.5 (not a table) =", Gigantix.getLong(multiplicationResultWithNumberlower))
+
+local multiplicationResultWithNumberLowerLower = Gigantix.multiply(Gigantix.stringToNumber("1"), -1.4)
+print("1 * (-1.4) (not a table) =", Gigantix.getLong(multiplicationResultWithNumberLowerLower))
+
+local multiplicationResultWithNumberLowerLowerLower = Gigantix.multiply(Gigantix.stringToNumber("1"), -2)
+print("1 * (-2) (not a table) =", Gigantix.getLong(multiplicationResultWithNumberLowerLowerLower))
 
 print("-------------------------------------------------------------")
 
