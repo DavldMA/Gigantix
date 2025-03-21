@@ -68,7 +68,7 @@ local NOTATION = {
 }
 
 -- Possible feature
--- 	'∞'    -- Infinity (for numbers beyond 10^360)
+-- 	'8'    -- Infinity (for numbers beyond 10^360)
 
 local CHARACTERS = {
 	"0","1","2","3","4","5","6","7","8","9",
@@ -114,7 +114,8 @@ local function getSign(blocks)
 	return (blocks[#blocks] < 0) and -1 or 1
 end
 
--- This is useful when you want to compare the magnitude of numbers without considering their sign
+-- This is useful when you want to compare the
+-- magnitude of numbers without considering their sign
 local function absBlocks(blocks)
 	local absArr = {}
 	for i, v in ipairs(blocks) do
@@ -141,6 +142,7 @@ end
 local function compareNumbers(num1, num2)
 	local sign1 = getSign(num1)
 	local sign2 = getSign(num2)
+	
 	-- If the signs differ, the negative number is smaller
 	if sign1 > sign2 then 
 		return 1 
@@ -197,6 +199,29 @@ local function subtractNumbers(num1, num2)
 		result[#result] = nil
 	end
 	return result
+end
+
+-- divides a big number by a small number, 
+-- returning the quotient and the remainder,
+-- to help on the multiply function
+function divideBySmall(num, divisor)
+	local quotientRev = {} 
+	local remainder = 0
+	for i = #num, 1, -1 do
+		local current = remainder * 1000 + num[i]
+		local q = math.floor(current / divisor)
+		remainder = current % divisor
+		table.insert(quotientRev, q)
+	end
+
+	local quotient = {}
+	for i = #quotientRev, 1, -1 do
+		table.insert(quotient, quotientRev[i])
+	end
+	while #quotient > 1 and quotient[#quotient] == 0 do
+		table.remove(quotient)
+	end
+	return quotient, remainder
 end
 
 -- Main Functions
@@ -277,7 +302,7 @@ function Gigantix.getShort(num, isEncoded)
 	end
 	--[[ possible feature
 	if suffixIndex > #NOTATION then
-		return "∞"
+		return "8"
 	end]]
 	local divisor = powerCache[suffixIndex - 1] or 1
 	local shortNum = numVal / divisor
@@ -355,45 +380,78 @@ end
 function Gigantix.multiply(num1, num2, isEncoded)
 	if isEncoded then
 		num1 = Gigantix.stringToNumber(Gigantix.decodeNumber(num1))
-		num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
-	end
-	local sign1 = getSign(num1)
-	local sign2 = getSign(num2)
-	local resultSign = sign1 * sign2
-
-	local abs1 = absBlocks(num1)
-	local abs2 = absBlocks(num2)
-	local resultLength = #abs1 + #abs2
-	local result = table_create(resultLength)
-	for i = 1, resultLength do
-		result[i] = 0
-	end
-
-	for i = 1, #abs1 do
-		for j = 1, #abs2 do
-			result[i+j-1] = result[i+j-1] + abs1[i] * abs2[j]
+		if type(num2) == "string" then
+			num2 = Gigantix.stringToNumber(Gigantix.decodeNumber(num2))
 		end
 	end
+	
+	if type(num2) == "table" then
+		local sign1 = getSign(num1)
+		local sign2 = getSign(num2)
+		local resultSign = sign1 * sign2
 
-	for i = 1, #result do
-		local carry = math_floor(result[i] / 1000)
-		result[i] = result[i] % 1000
-		if carry > 0 then
-			if i+1 <= #result then
-				result[i+1] = result[i+1] + carry
-			else
-				table_insert(result, carry)
+		local abs1 = absBlocks(num1)
+		local abs2 = absBlocks(num2)
+		local resultLength = #abs1 + #abs2
+		local result = table_create(resultLength)
+		for i = 1, resultLength do
+			result[i] = 0
+		end
+
+		for i = 1, #abs1 do
+			for j = 1, #abs2 do
+				result[i+j-1] = result[i+j-1] + abs1[i] * abs2[j]
 			end
 		end
-	end
 
-	while #result > 1 and result[#result] == 0 do
-		table_remove(result)
-	end
+		for i = 1, #result do
+			local carry = math_floor(result[i] / 1000)
+			result[i] = result[i] % 1000
+			if carry > 0 then
+				if i+1 <= #result then
+					result[i+1] = result[i+1] + carry
+				else
+					table_insert(result, carry)
+				end
+			end
+		end
 
-	result[#result] = result[#result] * resultSign
-	return result
+		while #result > 1 and result[#result] == 0 do
+			table_remove(result)
+		end
+
+		result[#result] = result[#result] * resultSign
+		return result
+		
+	elseif type(num2) == "number" then
+		local factor = num2
+		local sign1 = getSign(num1)
+		local resultSign = sign1 * (factor >= 0 and 1 or -1)
+		local absFactor = math.abs(factor)
+
+		local factorStr = tostring(absFactor)
+		local integerPart, fractionalPart = factorStr:match("^(%d+)%.?(%d*)$")
+		fractionalPart = fractionalPart or ""
+		local d = #fractionalPart 
+		local multiplierInt = tonumber(integerPart .. fractionalPart)
+		local multiplierGig = Gigantix.stringToNumber(tostring(multiplierInt), false)
+		local product = Gigantix.multiply(num1, multiplierGig, false)
+
+		local divisor = 10^d
+		local quotient, remainder = divideBySmall(product, divisor)
+
+		if remainder * 2 >= divisor then
+			local one = Gigantix.stringToNumber("1", false)
+			quotient = Gigantix.add(quotient, one, false)
+		end
+
+		quotient[#quotient] = quotient[#quotient] * resultSign
+		return quotient
+	else
+		error("Unsupported type for multiplication operand")
+	end
 end
+
 
 --[[<strong>Compare one long number with another returns true if equal</strong><br>
     <strong><em>Example:</em></strong>
